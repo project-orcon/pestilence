@@ -5,7 +5,7 @@
         <v-col cols="12" v-show="!showCamera" style="text-align:center">
           <video id="player" controls autoplay v-show="showVideo" class="camera"></video>
           <!-- default video player aspect ratio is 4:3 -->
-          <canvas id="canvas" class="camera" v-show="showCanvas"></canvas>
+          <canvas id="canvas" class="camera" v-show="showCanvas" width="800px" height="600px"></canvas>
           <div style="text-align:center" v-show="showVideo">
             <v-btn fab large color="red" id="capture" style="margin-top:-200px">
               <v-icon>camera</v-icon>
@@ -56,6 +56,11 @@
 
 <script>
 // @ is an alias to /src
+import { App } from "@/firebase.js";
+import "firebase/storage";
+
+export const Storage = App.storage();
+
 export default {
   mounted() {
     navigator.permissions
@@ -94,6 +99,28 @@ export default {
       };
       navigator.geolocation.getCurrentPosition(geoSuccess);
     },
+    onUpload() {
+      this.picture = null;
+      const storageRef = Storage.ref(`${this.currentPictureData.name}`).put(
+        this.currentPictureData.imageData
+      );
+      storageRef.on(
+        `state_changed`,
+        snapshot => {
+          this.uploadValue =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        },
+        error => {
+          console.log(error.message);
+        },
+        () => {
+          this.uploadValue = 100;
+          storageRef.snapshot.ref.getDownloadURL().then(url => {
+            this.picture = url;
+          });
+        }
+      );
+    },
     setUpCamera() {
       const player = document.getElementById("player");
       const canvas = document.getElementById("canvas");
@@ -112,6 +139,12 @@ export default {
         context.drawImage(player, 0, 0, canvas.width, canvas.height);
         //stop the video stream
         player.srcObject.getVideoTracks().forEach(track => track.stop());
+
+        canvas.toBlob(blob => {
+          this.currentPictureData.imageData = blob;
+          this.currentPictureData.name = Date.now() + ".png";
+          this.onUpload();
+        });
       });
 
       // Attach the video stream to the video element and autoplay.
@@ -124,6 +157,8 @@ export default {
     }
   },
   data: () => ({
+    picture: {},
+    currentPictureData: {},
     showVideoError: false,
     showCamera: true,
     showVideo: true,
