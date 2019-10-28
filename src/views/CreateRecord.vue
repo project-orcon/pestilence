@@ -37,7 +37,7 @@
       <v-row>
         <v-col>
           <v-form>
-            <v-select v-model="select" :items="categories" label="Category" required></v-select>
+            <v-select v-model="category" :items="categories" label="Category" required></v-select>
 
             <v-text-field v-model="location" label="Location" required></v-text-field>
             <div style="text-align:right" class="my-3">
@@ -45,7 +45,7 @@
             </div>
             <v-textarea v-model="notes" label="Notes" required></v-textarea>
             <div style="text-align:right">
-              <v-btn outlined>Save New Record</v-btn>
+              <v-btn outlined @click="save()">Save New Record</v-btn>
             </div>
           </v-form>
         </v-col>
@@ -58,6 +58,9 @@
 // @ is an alias to /src
 import { App } from "@/firebase.js";
 import "firebase/storage";
+import "firebase/firestore";
+
+export const DB = App.firestore();
 
 export const Storage = App.storage();
 
@@ -98,6 +101,14 @@ export default {
           startPos.coords.longitude.toFixed(6);
       };
       navigator.geolocation.getCurrentPosition(geoSuccess);
+    },
+    save() {
+      DB.collection("items").add({
+        category: this.category,
+        image: this.currentPictureData.name,
+        location: this.location,
+        notes: this.notes
+      });
     },
     onUpload() {
       this.picture = null;
@@ -163,6 +174,7 @@ export default {
     showCamera: true,
     showVideo: true,
     showCanvas: false,
+    category: "",
     categories: ["Weed", "Pest", "Disease"],
     location: "",
     notes: ""
