@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
+import CreateRecord from '../views/CreateRecord.vue'
 
 Vue.use(VueRouter)
 
@@ -8,6 +9,11 @@ const routes = [
   {
     path: '/',
     name: 'home',
+    component: CreateRecord
+  },
+  {
+    path: '/create',
+    name: 'createRecord',
     component: Home
   },
   {
