@@ -2,6 +2,7 @@ import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import CreateRecord from '../views/CreateRecord.vue'
+import Index from '../views/Index.vue'
 
 Vue.use(VueRouter)
 
@@ -9,12 +10,12 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: CreateRecord
+    component: Index
   },
   {
     path: '/create',
     name: 'createRecord',
-    component: Home
+    component: CreateRecord
   },
   {
     path: '/about',

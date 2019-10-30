@@ -60,6 +60,8 @@ import { App } from "@/firebase.js";
 import "firebase/storage";
 import "firebase/firestore";
 
+
+
 export const DB = App.firestore();
 
 export const Storage = App.storage();
@@ -103,7 +105,9 @@ export default {
       navigator.geolocation.getCurrentPosition(geoSuccess);
     },
     save() {
+      var dateNow=Date.now()
       DB.collection("items").add({
+        timestamp: dateNow,
         category: this.category,
         image: this.currentPictureData.name,
         location: this.location,
