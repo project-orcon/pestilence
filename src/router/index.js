@@ -3,6 +3,7 @@ import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import CreateRecord from '../views/CreateRecord.vue'
 import Index from '../views/Index.vue'
+import Camera from '../components/Camera.vue'
 
 Vue.use(VueRouter)
 
@@ -11,6 +12,11 @@ const routes = [
     path: '/',
     name: 'home',
     component: Index
+  },
+  {
+    path: '/camera',
+    name: 'camera',
+    component: Camera
   },
   {
     path: '/create',
