@@ -32,21 +32,28 @@
             >Camera access has been blocked, please go into site settings in your browser and set camera access permissions.</div>
           </div>
         </v-col>
-        <v-col cols="12"></v-col>
+        <v-col cols="12">
+          <div v-show="pictureError" class="red--text">Please add a picture before saving</div>
+        </v-col>
       </v-row>
       <v-row>
         <v-col>Add New Record</v-col>
       </v-row>
       <v-row>
         <v-col>
-          <v-form>
-            <v-select v-model="category" :items="categories" label="Category" required></v-select>
-
-            <v-text-field v-model="location" label="Location" required></v-text-field>
+          <v-form ref="form">
+            <v-select
+              v-model="category"
+              :items="categories"
+              label="Category"
+              :rules="categoryRules"
+              required
+            ></v-select>
+            <v-text-field v-model="location" label="Location" :rules="locationRules" required></v-text-field>
             <div style="text-align:right" class="my-3">
               <v-btn outlined color="grey darken-2" @click="loadGps">Get location from Device</v-btn>
             </div>
-            <v-textarea v-model="notes" label="Notes" required></v-textarea>
+            <v-textarea v-model="notes" label="Notes" :rules="notesRules" required></v-textarea>
             <div style="text-align:right">
               <v-btn outlined @click="save()">Save New Record</v-btn>
             </div>
@@ -62,6 +69,7 @@
 import { App } from "@/firebase.js";
 import "firebase/storage";
 import "firebase/firestore";
+
 import Camera from "@/components/Camera.vue"
 
 
@@ -96,6 +104,9 @@ Camera
       });
   },
   methods: {
+    validateField() {
+      this.$refs.form.validate();
+    },
     turnCameraOn() {
       this.setUpCamera();
     },
@@ -111,14 +122,26 @@ Camera
       navigator.geolocation.getCurrentPosition(geoSuccess);
     },
     save() {
-      var dateNow=Date.now()
-      DB.collection("items").add({
-        timestamp: dateNow,
-        category: this.category,
-        image: this.currentPictureData.name,
-        location: this.location,
-        notes: this.notes
-      });
+      if (this.validateField()) {
+        if (!this.currentPictureData.name) {
+          this.pictureError = true;
+        } else {
+          this.pictureError = false;
+          console.log("Made it here");
+          this.onUpload();
+           var dateNow=Date.now()
+          DB.collection("items").add({
+            timestamp: dateNow,
+            category: this.category,
+            image: this.currentPictureData.name,
+            location: this.location,
+            notes: this.notes
+          });
+          console.log("MADE IT TO HERE");
+        }
+      }
+
+     
     },
     onUpload() {
       this.picture = null;
@@ -164,7 +187,6 @@ Camera
         canvas.toBlob(blob => {
           this.currentPictureData.imageData = blob;
           this.currentPictureData.name = Date.now() + ".png";
-          this.onUpload();
         });
       });
 
@@ -179,7 +201,16 @@ Camera
   },
   data: () => ({
     files:[],
-    picture: {},
+    pictureError: false,
+    locationRules: [
+      v =>
+        /^([-+]?)([\d]{1,2})(((\.)(\d+)(,)))(\s*)(([-+]?)([\d]{1,3})((\.)(\d+))?)$/.test(
+          v
+        ) || "GPS Coordinates must be valid"
+    ],
+    categoryRules: [v => !!v || "Category is required"],
+    notesRules: [v => !!v || "Notes are required"],
+    picture: "",
     currentPictureData: {},
     showVideoError: false,
     showCamera: true,
