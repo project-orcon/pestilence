@@ -24,11 +24,14 @@
             </v-btn>
           </div>
         </v-col>
-        <v-col cols="12" v-show="showFilePicker">
+        <v-col cols="12" v-show="showFilePicker" >
           <v-file-input
             label="Add image"
             accept="image/*"
             capture="environment"
+            :value="value"
+            @change="updateValue($event)"
+
           ></v-file-input>
         </v-col>
       </v-row>
@@ -81,6 +84,10 @@ export default {
       });
   },
   methods: {
+      updateValue: function (value) {
+        console.log("value is",value)
+        this.$emit('input', value)
+      },
     turnCameraOn() {
       this.setUpCamera();
     },
@@ -151,7 +158,14 @@ export default {
       this.showVideo = true;
     }
   },
+  props: {
+   value: {
+        type: Array
+      },
+
+  },
   data: () => ({
+    files:[],
     showFilePicker: false,
     picture: {},
     currentPictureData: {},

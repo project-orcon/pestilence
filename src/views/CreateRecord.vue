@@ -2,7 +2,10 @@
   <div class="createRecord">
     <v-container>
       <v-row>
+        {{files}}
+    <v-col cols="12"> <Camera v-model="files"></Camera></v-col>
         <v-col cols="12" v-show="!showCamera" style="text-align:center">
+             
           <video id="player" controls autoplay v-show="showVideo" class="camera"></video>
           <!-- default video player aspect ratio is 4:3 -->
           <canvas id="canvas" class="camera" v-show="showCanvas" width="800px" height="600px"></canvas>
@@ -59,7 +62,7 @@
 import { App } from "@/firebase.js";
 import "firebase/storage";
 import "firebase/firestore";
-
+import Camera from "@/components/Camera.vue"
 
 
 export const DB = App.firestore();
@@ -67,6 +70,9 @@ export const DB = App.firestore();
 export const Storage = App.storage();
 
 export default {
+  components: {
+Camera
+  },
   mounted() {
     navigator.permissions
       .query({ name: "camera" })
@@ -172,6 +178,7 @@ export default {
     }
   },
   data: () => ({
+    files:[],
     picture: {},
     currentPictureData: {},
     showVideoError: false,
