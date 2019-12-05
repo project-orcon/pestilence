@@ -1,37 +1,60 @@
 <template>
-  <div id="camera">
-    <v-container>
-      <v-row>
-        <v-col cols="12" v-show="!showCamera" style="text-align:center">
+  <div id="camera" :class="!showFilePicker ? 'camera_on' : ''">
+    <v-container fluid style="padding:0">
+      <v-row no-gutters>
+        <v-col
+          cols="12"
+          v-show="!showCamera"
+          style="text-align:center"
+          no-gutters
+          class="black"
+        >
           <video
             id="player"
-            controls
             autoplay
             v-show="showVideo"
             class="camera"
-          ></video>
-          <!-- default video player aspect ratio is 4:3 -->
-          <canvas
-            id="canvas"
-            class="camera"
-            v-show="showCanvas"
-            width="80vw"
-            height="60vw"
-          ></canvas>
-          <div style="text-align:center" v-show="showVideo">
-            <v-btn fab large color="red" id="capture" style="margin-top:-200px">
-              <v-icon>mdi-camera</v-icon>
+            style="padding:0 !important"
+          >
+            >
+          </video>
+          <div style="text-align:center;height:0" v-show="showVideo">
+            <v-btn
+              fab
+              large
+              color="red"
+              id="capture"
+              class="camera_button_overlay"
+            >
+              <v-icon>camera</v-icon>
             </v-btn>
           </div>
+          <canvas id="canvas" class="camera" v-show="showCanvas"></canvas>
+          <div style="text-align:center;height:0" v-show="showCanvas">
+            <v-btn
+              fab
+              large
+              color="red"
+              class="camera_button_overlay"
+              @click="resetCamera"
+            >
+              <v-icon>mdi-undo</v-icon>
+            </v-btn>
+          </div>
+         
         </v-col>
-        <v-col cols="12" v-show="showFilePicker" >
+        <v-col cols="12">
+    <v-input :rules="rules" v-model="value" class="ma-2"></v-input>
+        </v-col>
+        <v-col cols="12" v-show="showFilePicker" no_gutters="false">
           <v-file-input
             label="Add image"
             accept="image/*"
             capture="environment"
             :value="value"
             @change="updateValue($event)"
-
+            :rules="rules"
+            required
           ></v-file-input>
         </v-col>
       </v-row>
@@ -40,21 +63,12 @@
 </template>
 
 <script>
-// @ is an alias to /src
-import { App } from "@/firebase.js";
-import "firebase/storage";
-import "firebase/firestore";
-
-export const DB = App.firestore();
-
-export const Storage = App.storage();
-
 export default {
   mounted() {
     //check if can access media devices, if not display file picker.
-    const supported = "mediaDevices" in navigator;
-    console.log("supported is", supported);
+    this.setUpCanvas();
 
+    const supported = "mediaDevices" in navigator;
     if (!supported) {
       this.showFilePicker = true;
       return;
@@ -67,7 +81,6 @@ export default {
       .getUserMedia(constraints)
       .then(stream => {
         navigator.permissions.query({ name: "camera" }).then(permissionObj => {
-          console.log(permissionObj.state);
           if (permissionObj.state === "granted") {
             //if camera permission has previously been granted then display video,
             //else put default cameraview on screen.
@@ -83,45 +96,30 @@ export default {
         this.showFilePicker = true;
       });
   },
+  beforeDestoy() {
+    //cleanup
+    //turn off camera access
+
+    const player = document.getElementById("player");
+
+    //stop the video stream
+    player.srcObject.getVideoTracks().forEach(track => track.stop());
+  },
   methods: {
-      updateValue: function (value) {
-        console.log("value is",value)
-        this.$emit('input', value)
-      },
-    turnCameraOn() {
-      this.setUpCamera();
+    resetCamera() {
+      this.updateValue();
+      this.showCanvas = false;
+      this.showVideo = true;
     },
-    save() {
-      var dateNow = Date.now();
-      DB.collection("items").add({
-        timestamp: dateNow,
-        category: this.category,
-        image: this.currentPictureData.name,
-        location: this.location,
-        notes: this.notes
-      });
+    setUpCanvas() {
+      //sets canvas height and width (responsively)
+      let canvas = document.getElementById("canvas");
+      canvas.width = document.documentElement.clientWidth;
+      canvas.height = canvas.width * 0.75;
     },
-    onUpload() {
-      this.picture = null;
-      const storageRef = Storage.ref(`${this.currentPictureData.name}`).put(
-        this.currentPictureData.imageData
-      );
-      storageRef.on(
-        `state_changed`,
-        snapshot => {
-          this.uploadValue =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        },
-        error => {
-          console.log(error.message);
-        },
-        () => {
-          this.uploadValue = 100;
-          storageRef.snapshot.ref.getDownloadURL().then(url => {
-            this.picture = url;
-          });
-        }
-      );
+    updateValue: function(value) {
+   
+      this.$emit("input", value);
     },
     setUpCamera() {
       const player = document.getElementById("player");
@@ -139,13 +137,12 @@ export default {
         this.showVideo = false;
 
         context.drawImage(player, 0, 0, canvas.width, canvas.height);
-        //stop the video stream
-        player.srcObject.getVideoTracks().forEach(track => track.stop());
 
         canvas.toBlob(blob => {
-          this.currentPictureData.imageData = blob;
-          this.currentPictureData.name = Date.now() + ".png";
-          this.onUpload();
+          //convert blob into file.
+          let fileName = Date.now() + ".png";
+          let file = new File([blob], fileName);
+          this.updateValue(file);
         });
       });
 
@@ -159,17 +156,16 @@ export default {
     }
   },
   props: {
-   value: {
-        type: Array
-      },
-
+    rules: {
+      type: Array
+    },
+    value: {
+      type: File
+    }
   },
   data: () => ({
-    files:[],
+    error:false,
     showFilePicker: false,
-    picture: {},
-    currentPictureData: {},
-    showVideoError: false,
     showCamera: true,
     showVideo: true,
     showCanvas: false
@@ -177,17 +173,28 @@ export default {
 };
 </script>
 <style scoped>
-.camera {
-  width: 80vh;
-  height: 60vh;
+
+
+
+.camera_on {
+margin: 0 -24px !important;
 }
 
-.default-camera {
-  height: 30vh;
-  min-height: 400px;
-  text-align: center;
-  justify-content: center;
-  display: flex;
-  align-items: center;
+video {
+  display: block;
+  padding: 0 !important;
+  margin: 0 auto !important;
+}
+.camera {
+  width: 100vw;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+canvas {
+  display: block;
+}
+.camera_button_overlay {
+  margin-top: -120px;
 }
 </style>
