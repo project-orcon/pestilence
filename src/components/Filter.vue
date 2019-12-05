@@ -26,7 +26,7 @@ export default {
     switchChanged() {
       //clear value when switch turned off.
       if (this.switch1 == false) {
-        this.$emit("input", "");
+        this.$emit("input", null);
       } else {
         if (this.def != null) {
           this.$emit("input", this.def);

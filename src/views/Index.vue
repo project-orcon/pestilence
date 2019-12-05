@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-row>
-      <v-expansion-panels flat>
+      <v-expansion-panels>
         <v-expansion-panel>
           <v-expansion-panel-header>Filters</v-expansion-panel-header>
           <v-expansion-panel-content>
@@ -36,7 +36,9 @@
 
       <v-col cols="12" md="4" v-for="item in paginated" :key="item.image">
         <v-card outlined>
+         
           <v-img :src="item.image" />
+          <div class="text-right ma-2 subtitle-1S grey--text"> {{new Date(item.timestamp).toDateString()}}</div>
           <v-card-text class="subtitle-1">
             <div class="upper title mt-5 indigo--text">Category</div>
             <v-chip
@@ -75,10 +77,13 @@ export default {
     this.defaultMonth= this.currentMonth();
     let vueInstance = this;
     DB.collection("items")
+    .orderBy('timestamp',"desc")
       .get()
       .then(querySnapshot => {
         this.observations = querySnapshot.docs.map(doc => doc.data());
         // do something with documents
+
+
 
         Promise.all(
           this.observations.map(x => Storage.ref(x.image).getDownloadURL())
@@ -158,7 +163,7 @@ export default {
       let filtered;
       filtered = this.observations;
 
-      if (this.monthSelect !="") {
+      if (this.monthSelect != null) {
         filtered = filtered.filter(
           x =>
             this.convertMonth(new Date(x.timestamp).getMonth()) ===
@@ -166,7 +171,7 @@ export default {
         );
       }
 
-      if (this.gpsSelect != "") {
+      if (this.gpsSelect != null) {
         filtered = this.filterByLocation(filtered, this.gpsSelect);
       } else {
         //clear any added location groups groups
@@ -176,7 +181,7 @@ export default {
         });
       }
 
-      if (this.categorySelect != "") {
+      if (this.categorySelect != null) {
         filtered = filtered.filter(x => x.category === this.categorySelect);
       }
 
@@ -202,7 +207,7 @@ export default {
   data: () => ({
     page: 1,
     pages: 1,
-    itemsPerPage: 3,
+    itemsPerPage: 10,
     groups: [
       { text: "3 Location Groups", value: 3 },
       { text: "6 Location Groups", value: 6 },
@@ -214,12 +219,13 @@ export default {
       { text: "Weed", value: "Weed" },
       { text: "Disease", value: "Disease" }
     ],
-    categorySelect: "",
-    gpsSelect: 3,
+    categorySelect: null,
+    gpsSelect: null,
     filtered: [],
     showPanel: false,
     gpsSwitch: false,
     monthSwitch: false,
+    monthSelect:null,
     defaultMonth: "",
     storage: Storage,
     observations: [],
