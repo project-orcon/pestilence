@@ -19,17 +19,7 @@
               :rules="categoryRules"
               required
             ></v-select>
-            <v-text-field
-              v-model="location"
-              label="Location"
-              :rules="locationRules"
-              required
-            ></v-text-field>
-            <div style="text-align:right" class="my-3">
-              <v-btn outlined color="grey darken-2" @click="loadGps"
-                >Get location from Device</v-btn
-              >
-            </div>
+           <GPS v-model="location" :rules="locationRules"></GPS>
             <v-textarea
               v-model="notes"
               label="Notes"
@@ -71,6 +61,7 @@ import "firebase/storage";
 import "firebase/firestore";
 
 import Camera from "@/components/Camera.vue";
+import GPS from "@/components/GPS.vue";
 
 export const DB = App.firestore();
 
@@ -78,7 +69,8 @@ export const Storage = App.storage();
 
 export default {
   components: {
-    Camera
+    Camera,
+    GPS
   },
   mounted() {},
   methods: {
@@ -88,17 +80,7 @@ export default {
     turnCameraOn() {
       this.setUpCamera();
     },
-    loadGps() {
-      var startPos;
-      var geoSuccess = position => {
-        startPos = position;
-        this.location =
-          startPos.coords.latitude.toFixed(6) +
-          "," +
-          startPos.coords.longitude.toFixed(6);
-      };
-      navigator.geolocation.getCurrentPosition(geoSuccess);
-    },
+   
     save() {
       if (this.validateField()) {
         this.currentlySaving = true;
