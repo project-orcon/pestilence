@@ -1,4 +1,4 @@
-<template >
+<template>
   <v-container>
     <v-row>
       <v-expansion-panels flat>
@@ -7,33 +7,28 @@
           <v-expansion-panel-content>
             <v-divider></v-divider>
             <v-container fluid>
-              <v-row align-content="top">
-                <v-col cols="12" class="subtitle-2">
-                  <v-switch v-model="monthSwitch" @change="filter()" label="Filter by Month"></v-switch>
-                  <v-select
-                    outlined
-                    v-show="monthSwitch"
-                    menu-props="auto"
-                    v-model="selected"
-                    :items="months.map(x => x.name)"
-                    @change="filter()"
-                  ></v-select>
-                </v-col>
-              </v-row>
+              <SwitchFilter
+                label="Filter by Month"
+                :select-options="monthsGroup()"
+                @change="filter()"
+                  :def="defaultMonth"
+                    v-model="monthSelect"
+              ></SwitchFilter>
               <v-divider></v-divider>
-              <v-row>
-                <v-col cols="12" class="subtitle-2">
-                  <v-switch v-model="gpsSwitch" @change="filter()" label="Filter by location"></v-switch>
-                  <v-select
-                    outlined
-                    v-show="gpsSwitch"
-                    menu-props="auto"
-                    v-model="gpsSelect"
-                    :items="groups"
-                    @change="filter()"
-                  ></v-select>
-                </v-col>
-              </v-row>
+              
+              <SwitchFilter
+                label="Filter by Location"
+                :select-options="groups"
+                @change="filter()"
+                v-model="gpsSelect"
+              ></SwitchFilter>
+              <v-divider></v-divider>
+              <SwitchFilter
+                label="Filter by Category"
+                :select-options="categoryGroups"
+                @change="filter()"
+                v-model="categorySelect"
+              ></SwitchFilter>
             </v-container>
           </v-expansion-panel-content>
         </v-expansion-panel>
@@ -46,22 +41,20 @@
             <div class="upper title mt-5 indigo--text">Category</div>
             <v-chip
               label
-              :class="item.category+' mt-3'"
+              :class="item.category + ' mt-3'"
               style="width:100%;text-align:center"
-            >{{item.category}}</v-chip>
+              >{{ item.category }}</v-chip
+            >
             <div class="upper title mt-5 indigo--text">Location</div>
             <v-text-field disabled :value="item.location"></v-text-field>
             <div class="upper title mt-5 indigo--text">Notes</div>
             <v-textarea disabled :value="item.notes"></v-textarea>
-            <v-chip label v-if="item.group">{{item.group}}</v-chip>
+            <v-chip label v-if="item.group">{{ item.group }}</v-chip>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
-       <v-pagination
-      v-model="page"
-      :length="pages"
-    ></v-pagination>
+    <v-pagination v-model="page" :length="pages"></v-pagination>
   </v-container>
 </template>
 <script>
@@ -72,9 +65,14 @@ export const DB = App.firestore();
 
 const clusterMaker = require("clusters");
 
+import SwitchFilter from "@/components/Filter.vue";
+
 export default {
+  components: {
+    SwitchFilter
+  },
   mounted() {
-    this.selected = this.currentMonth();
+    this.defaultMonth= this.currentMonth();
     let vueInstance = this;
     DB.collection("items")
       .get()
@@ -92,6 +90,9 @@ export default {
       });
   },
   methods: {
+    monthsGroup: function() {
+      return this.months.map(x => {return {text: x.name, value:x.name}});
+    },
     clusterize(numClusters) {
       //test sort into 2 clusters
       clusterMaker.k(numClusters);
@@ -121,6 +122,7 @@ export default {
     currentMonthIndex() {
       return new Date().getMonth();
     },
+
     filterByLocation(items, numClusters) {
       let clusters = this.clusterize(numClusters);
       let locationFiltered = [];
@@ -154,58 +156,71 @@ export default {
 
       //filter according to which filters are current switched on and the values of the filters.
       let filtered;
+      filtered = this.observations;
 
-      if (this.monthSwitch === true) {
-        filtered = this.observations.filter(
+      if (this.monthSelect !="") {
+        filtered = filtered.filter(
           x =>
             this.convertMonth(new Date(x.timestamp).getMonth()) ===
-            this.selected
+            this.monthSelect
         );
-      } else {
-        filtered = this.observations;
       }
 
-      if (this.gpsSwitch === true) {
+      if (this.gpsSelect != "") {
         filtered = this.filterByLocation(filtered, this.gpsSelect);
+      } else {
+        //clear any added location groups groups
+        filtered.map(x => {
+          x.group = null;
+          return x;
+        });
       }
-      else {
-          filtered.map(x => {x.group= null; return x;})
+
+      if (this.categorySelect != "") {
+        filtered = filtered.filter(x => x.category === this.categorySelect);
       }
 
       this.filtered = filtered;
       console.log("filtered is ", filtered);
 
       //reset pagination values
-        this.pages =parseInt(filtered.length/this.itemsPerPage)+1;
-        this.page=1;
+      this.pages = parseInt(filtered.length / this.itemsPerPage) + 1;
+      this.page = 1;
       return filtered;
     }
   },
   computed: {
-      paginated: function(){
-          let startIndex=(this.page-1)*this.itemsPerPage;
-          console.log(startIndex)
-          let endIndex=startIndex + this.itemsPerPage;
-          console.log(endIndex)
-          return this.filtered.slice(startIndex,endIndex)
-      }
+    
+    paginated: function() {
+      let startIndex = (this.page - 1) * this.itemsPerPage;
+      console.log(startIndex);
+      let endIndex = startIndex + this.itemsPerPage;
+      console.log(endIndex);
+      return this.filtered.slice(startIndex, endIndex);
+    }
   },
   data: () => ({
-      page:1,
-      pages:1,
-      itemsPerPage:3,
+    page: 1,
+    pages: 1,
+    itemsPerPage: 3,
     groups: [
       { text: "3 Location Groups", value: 3 },
       { text: "6 Location Groups", value: 6 },
       { text: " 9 Location Groups", value: 9 },
       { text: "12 Location Groups", value: 12 }
     ],
+    categoryGroups: [
+      { text: "Pest", value: "Pest" },
+      { text: "Weed", value: "Weed" },
+      { text: "Disease", value: "Disease" }
+    ],
+    categorySelect: "",
     gpsSelect: 3,
     filtered: [],
     showPanel: false,
     gpsSwitch: false,
     monthSwitch: false,
-    selected: "",
+    defaultMonth: "",
     storage: Storage,
     observations: [],
     months: [
