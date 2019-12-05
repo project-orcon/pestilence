@@ -9,8 +9,16 @@
     ></v-text-field>
     <div style="text-align:right" class="my-3">
       <v-btn outlined color="grey darken-2" @click="loadGps"  :disabled="disableGPS"
-        >Get location from Device</v-btn
-      >
+        >Get location from Device
+         <v-progress-circular
+                  style="margin-left:10px"
+                  v-show="findingLocation"
+                  size="16"
+                  width="2"
+                  indeterminate
+                  color="black"
+                ></v-progress-circular>
+                </v-btn>
     </div>
   </div>
 </template>
@@ -32,6 +40,7 @@ export default {
           });
     },
     loadGps() {
+        this.findingLocation=true;
       let startPos;
       let geoSuccess = position => {
         startPos = position;
@@ -40,16 +49,19 @@ export default {
           "," +
           startPos.coords.longitude.toFixed(6);
         this.$emit("input", location);
+        this.findingLocation=false;
       };
 
       let promptDeclined= error => {
           this.disableGPS=true;
+          this.findingLocation=false;
       }
       navigator.geolocation.getCurrentPosition(geoSuccess, promptDeclined);
     }
   },
   data: () => ({
-    disableGPS: false
+    disableGPS: false,
+    findingLocation:false
   }),
   props: {
     value: String,

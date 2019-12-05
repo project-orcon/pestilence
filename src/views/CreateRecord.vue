@@ -1,13 +1,6 @@
 <template>
   <div class="createRecord">
-    <v-container fluid>
-      <v-row>
-        {{ file }}
-        <v-col cols="12"> </v-col>
-      </v-row>
-      <v-row>
-        <v-col>Add New Record</v-col>
-      </v-row>
+    <v-container fluid style="margin-top:-35px">
       <v-row>
         <v-col>
           <v-form ref="form">
@@ -95,7 +88,9 @@ export default {
               location: this.location,
               notes: this.notes
             });
+            //successfully saved -> 
             this.currentlySaving = false;
+            this.$router.push('/')
           })
           .catch(e => {
             this.currentlySaving = false;
