@@ -22,7 +22,7 @@ scout xyz
         </v-fade-transition>
       </v-container>
     </v-content>  
-
+    <v-footer color="green" class="mt-5"><a href="https://www.bedson.xyz" style="color:white;font-size:12px;text-decoration:none">A bedson xyz sample app</a></v-footer>
   </v-app>
   </div>
 </template>

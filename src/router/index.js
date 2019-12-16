@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Home from '../views/Home.vue'
 import CreateRecord from '../views/CreateRecord.vue'
 import Index from '../views/Index.vue'
 import Camera from '../components/Camera.vue'

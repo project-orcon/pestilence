@@ -55,12 +55,22 @@
 
       <v-col cols="12" md="4" v-for="item in paginated" :key="item.id">
         <v-card >
-          <v-img :src="item.image" />
+          <v-img :src="item.image" height="250">
+           <template v-slot:placeholder>
+                    <v-row
+                      class="fill-height ma-0"
+                      align="center"
+                      justify="center"
+                    >
+                      <v-progress-circular indeterminate color="green lighten-4"></v-progress-circular>
+                    </v-row>
+                  </template>
+                  </v-img>
           <div class="text-right ma-2 subtitle-1S grey--text">
             {{ new Date(item.timestamp).toDateString() }}
           </div>
-          <v-card-text class="subtitle-1">
-            <div class="upper title mt-5 indigo--text">Category</div>
+          <v-card-text class="subtitle-1" style="margin-top:-15px">
+            <div class="upper title indigo--text">Category</div>
             <v-chip
               label
               :class="item.category + ' mt-3'"
@@ -132,6 +142,7 @@ export default {
       });
   },
   methods: {
+    
     checkIfOnline() {
       return DB.collection("items").get({ source: "server" });
     },
@@ -230,13 +241,15 @@ export default {
       this.filtered = filtered;
       console.log("filtered is ", filtered);
 
-      //reset pagination values
-      this.pages = parseInt(filtered.length / this.itemsPerPage) + 1;
-      this.page = 1;
+     
       return filtered;
     }
   },
   computed: {
+    pages: function(){
+let plength=this.filter().length / this.itemsPerPage   + 1;
+return parseInt(plength);
+    },
     paginated: function() {
       let startIndex = (this.page - 1) * this.itemsPerPage;
       console.log(startIndex);
@@ -247,8 +260,7 @@ export default {
   },
   data: () => ({
     page: 1,
-    pages: 1,
-    itemsPerPage: 10,
+    itemsPerPage: 6,
     groups: [
       { text: "3 Location Groups", value: 3 },
       { text: "6 Location Groups", value: 6 },
