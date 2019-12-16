@@ -1,44 +1,64 @@
 <template>
   <v-container>
-    <v-row>
-      <v-expansion-panels>
-        <v-expansion-panel>
-          <v-expansion-panel-header>Filters</v-expansion-panel-header>
-          <v-expansion-panel-content>
-            <v-divider></v-divider>
-            <v-container fluid>
-              <SwitchFilter
-                label="Filter by Month"
-                :select-options="monthsGroup()"
-                @change="filter()"
-                  :def="defaultMonth"
-                    v-model="monthSelect"
-              ></SwitchFilter>
-              <v-divider></v-divider>
-              
-              <SwitchFilter
-                label="Filter by Location"
-                :select-options="groups"
-                @change="filter()"
-                v-model="gpsSelect"
-              ></SwitchFilter>
-              <v-divider></v-divider>
-              <SwitchFilter
-                label="Filter by Category"
-                :select-options="categoryGroups"
-                @change="filter()"
-                v-model="categorySelect"
-              ></SwitchFilter>
-            </v-container>
-          </v-expansion-panel-content>
-        </v-expansion-panel>
-      </v-expansion-panels>
+    <v-row align="start">
+      <v-col cols="12" 
+        ><span  class="headline font-weight-bold white--text green" style="padding:15px;padding-right:100px">Records</span><v-btn
+        class="float-right"
+        outlined
+          color="white"
+          style="height:48px"
+          @click="$router.push('/create')"
+          >
+          <v-icon left>note_add</v-icon>Add new record</v-btn
+        >
+      </v-col>
+      <v-col cols="12">
+        <v-expansion-panels>
+          <v-expansion-panel>
+            <v-expansion-panel-header><div><v-icon left >filter_list</v-icon>Filters</div></v-expansion-panel-header>
+            <v-expansion-panel-content>
+              <v-divider class="green"></v-divider>
+              <v-container fluid>
+                <v-row>
+                  <v-col cols="12" md="4">
+                    <SwitchFilter
+                      label="Filter by Month"
+                      :select-options="monthsGroup()"
+                      @change="filter()"
+                      :def="defaultMonth"
+                      v-model="monthSelect"
+                    ></SwitchFilter>
+                  </v-col>
 
-      <v-col cols="12" md="4" v-for="item in paginated" :key="item.image">
-        <v-card outlined>
-         
+                  <v-col cols="12" md="4">
+                    <SwitchFilter
+                      label="Filter by Location"
+                      :select-options="groups"
+                      @change="filter()"
+                      v-model="gpsSelect"
+                    ></SwitchFilter>
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <SwitchFilter
+                      label="Filter by Category"
+                      :select-options="categoryGroups"
+                      @change="filter()"
+                      v-model="categorySelect"
+                    ></SwitchFilter>
+                  </v-col>
+                </v-row>
+              </v-container>
+            </v-expansion-panel-content>
+          </v-expansion-panel>
+        </v-expansion-panels>
+      </v-col>
+
+      <v-col cols="12" md="4" v-for="item in paginated" :key="item.id">
+        <v-card >
           <v-img :src="item.image" />
-          <div class="text-right ma-2 subtitle-1S grey--text"> {{new Date(item.timestamp).toDateString()}}</div>
+          <div class="text-right ma-2 subtitle-1S grey--text">
+            {{ new Date(item.timestamp).toDateString() }}
+          </div>
           <v-card-text class="subtitle-1">
             <div class="upper title mt-5 indigo--text">Category</div>
             <v-chip
@@ -56,7 +76,7 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-pagination v-model="page" :length="pages"></v-pagination>
+    <v-pagination v-model="page" :length="pages" color="green" ></v-pagination>
   </v-container>
 </template>
 <script>
@@ -68,22 +88,25 @@ export const DB = App.firestore();
 const clusterMaker = require("clusters");
 
 import SwitchFilter from "@/components/Filter.vue";
+import IDB from "@/indexDbService.js";
 
 export default {
   components: {
     SwitchFilter
   },
   mounted() {
-    this.defaultMonth= this.currentMonth();
+    this.defaultMonth = this.currentMonth();
     let vueInstance = this;
-    DB.collection("items")
-    .orderBy('timestamp',"desc")
-      .get()
+
+    this.checkIfOnline()
+      .then(
+        DB.collection("items")
+          .orderBy("timestamp", "desc")
+          .get()
+      )
       .then(querySnapshot => {
         this.observations = querySnapshot.docs.map(doc => doc.data());
         // do something with documents
-
-
 
         Promise.all(
           this.observations.map(x => Storage.ref(x.image).getDownloadURL())
@@ -91,12 +114,31 @@ export default {
           result.forEach((y, index) => (this.observations[index].image = y));
         });
 
-        this.filter();
+        //save data to indexedDB
+
+        return this.observations;
+      })
+      .then(obs => IDB.saveIndexedDB(obs))
+      .catch(e => {
+        console.log("Not ONLINE");
+        IDB.indexDBPromise().then(response => {
+          let indexdb = response;
+          let transaction = indexdb.transaction("observations", "readwrite");
+          let estimateStore = transaction.objectStore("observations");
+          indexdb.getAll("observations").then(x => {
+            this.observations = x;
+          });
+        });
       });
   },
   methods: {
+    checkIfOnline() {
+      return DB.collection("items").get({ source: "server" });
+    },
     monthsGroup: function() {
-      return this.months.map(x => {return {text: x.name, value:x.name}});
+      return this.months.map(x => {
+        return { text: x.name, value: x.name };
+      });
     },
     clusterize(numClusters) {
       //test sort into 2 clusters
@@ -195,13 +237,12 @@ export default {
     }
   },
   computed: {
-    
     paginated: function() {
       let startIndex = (this.page - 1) * this.itemsPerPage;
       console.log(startIndex);
       let endIndex = startIndex + this.itemsPerPage;
       console.log(endIndex);
-      return this.filtered.slice(startIndex, endIndex);
+      return this.filter().slice(startIndex, endIndex);
     }
   },
   data: () => ({
@@ -225,7 +266,7 @@ export default {
     showPanel: false,
     gpsSwitch: false,
     monthSwitch: false,
-    monthSelect:null,
+    monthSelect: null,
     defaultMonth: "",
     storage: Storage,
     observations: [],

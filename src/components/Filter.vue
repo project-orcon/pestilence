@@ -3,18 +3,20 @@
     <v-row align-content="top">
       <v-col cols="12" class="subtitle-2">
         <v-switch
+        color="green"
           v-model="switch1"
           @change="switchChanged()"
           :label="label"
-        ></v-switch>
+        style="margin:0 !important;padding:0"></v-switch>
         <v-select
-          outlined
-          v-show="switch1"
+          color="green"
+          :disabled="!switch1"
           menu-props="auto"
           :value="value"
           :items="selectOptions"
           @change="$emit('change')"
           @input="$emit('input', $event)"
+          style="margin:-20px 0"
         ></v-select>
       </v-col>
     </v-row>

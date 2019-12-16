@@ -1,11 +1,11 @@
 <template>
   <div id="camera" :class="!showFilePicker ? 'camera_on' : ''">
-    <v-container fluid style="padding:0">
+    <v-container fluid style="padding:0;">
       <v-row no-gutters>
         <v-col
           cols="12"
           v-show="!showCamera"
-          style="text-align:center"
+          style="text-align:center;"
           no-gutters
           class="black"
         >
@@ -21,30 +21,28 @@
           <div style="text-align:center;height:0" v-show="showVideo">
             <v-btn
               fab
-              large
               color="red"
               id="capture"
               class="camera_button_overlay"
             >
-              <v-icon>camera</v-icon>
+              <v-icon color="white">camera</v-icon>
             </v-btn>
           </div>
           <canvas id="canvas" class="camera" v-show="showCanvas"></canvas>
           <div style="text-align:center;height:0" v-show="showCanvas">
             <v-btn
               fab
-              large
               color="red"
               class="camera_button_overlay"
               @click="resetCamera"
             >
-              <v-icon>mdi-undo</v-icon>
+              <v-icon color="white">sync</v-icon>
             </v-btn>
           </div>
          
         </v-col>
         <v-col cols="12">
-    <v-input :rules="rules" v-model="value" class="ma-2"></v-input>
+    <v-input :rules="rules" v-model="value" class="ma-2" v-show="!showFilePicker"></v-input>
         </v-col>
         <v-col cols="12" v-show="showFilePicker" no_gutters="false">
           <v-file-input
@@ -177,7 +175,7 @@ export default {
 
 
 .camera_on {
-margin: 0 -24px !important;
+//margin: 0 -24px !important;
 }
 
 video {
@@ -186,8 +184,7 @@ video {
   margin: 0 auto !important;
 }
 .camera {
-  width: 100vw;
-  max-width: 1100px;
+  width: 100%;
   margin: 0 auto;
 }
 

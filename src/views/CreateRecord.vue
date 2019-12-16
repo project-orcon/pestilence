@@ -1,9 +1,12 @@
 <template>
-  <div class="createRecord">
-    <v-container fluid style="margin-top:-35px">
-      <v-row>
+  <div class="createRecord white">
+    <v-container fluid style="margin-top:10px;padding: 0 0" >
+    
+      <v-row >
         <v-col>
+            <div  class="headline font-weight-bold white--text green" style="margin-top:-12px;;padding:15px;width:100%;">Add new record</div>
           <v-form ref="form">
+            <v-container>
             <Camera v-model="file" :rules="imageRules"></Camera>
             <v-select
               v-model="category"
@@ -19,7 +22,7 @@
               :rules="notesRules"
               required
             ></v-textarea>
-            <div style="text-align:right">
+            <div style="text-align:right;margin-bottom:100px">
               <v-btn outlined @click="save()">
                 Save New Record
                 <v-progress-circular
@@ -32,6 +35,7 @@
                 ></v-progress-circular
               ></v-btn>
             </div>
+            </v-container>
           </v-form>
         </v-col>
       </v-row>
@@ -81,7 +85,10 @@ export default {
         this.onUpload(this.file)
           .then(imageUrl => {
             var dateNow = Date.now();
-            DB.collection("items").add({
+             var generatedId = DB.collection("items").doc().id;
+
+            DB.collection("items").doc(generatedId).set({
+              id:generatedId,
               timestamp: dateNow,
               category: this.category,
               image: this.file.name,
@@ -147,6 +154,7 @@ export default {
 };
 </script>
 <style scoped>
+
 canvas {
   width: 100%;
 }

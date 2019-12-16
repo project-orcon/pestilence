@@ -1,16 +1,22 @@
 <template>
 <div id="app">
   <v-app>
-    <v-app-bar app>
-      <v-toolbar-title class="headline text-uppercase">
-        <span>Pestilence</span>
-        <span class="font-weight-light"></span>
+    <v-app-bar app class="text-center">
+      <v-icon large color="green" v-show="$route.path!= '/'" @click="$router.go(-1)">keyboard_backspace</v-icon>
+        <v-spacer></v-spacer>
+     
+<v-toolbar-title class="heading-font green--text font-weight-bold">
+scout xyz
+
       </v-toolbar-title>
+         <v-toolbar-side-icon>
+  <v-icon color="green" large right>spa</v-icon>
+        </v-toolbar-side-icon>
       <v-spacer></v-spacer>
 
     </v-app-bar>
        <v-content>
-      <v-container fluid>
+      <v-container fluid  style="max-width:1100px;margin:0 auto">
         <v-fade-transition mode="out-in">
           <router-view></router-view>
         </v-fade-transition>
@@ -34,3 +40,16 @@ export default {
   }),
 };
 </script>
+
+<style>
+#app{
+  background-image: linear-gradient(to bottom right, green, yellow);
+}
+
+.heading-font {
+font-family: 'Didact Gothic', sans-serif !important;
+font-size:30px !important;
+}
+
+
+</style>

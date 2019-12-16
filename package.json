@@ -10,6 +10,7 @@
     "clusters": "0.0.4",
     "core-js": "^3.3.2",
     "firebase": "^7.2.2",
+    "idb": "^4.0.5",
     "register-service-worker": "^1.6.2",
     "vue": "^2.6.10",
     "vue-router": "^3.1.3",
