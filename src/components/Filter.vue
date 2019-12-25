@@ -16,7 +16,7 @@
           :items="selectOptions"
           @change="$emit('change')"
           @input="$emit('input', $event)"
-          style="margin:-20px 0"
+          style="margin:-30px 0"
         ></v-select>
       </v-col>
     </v-row>

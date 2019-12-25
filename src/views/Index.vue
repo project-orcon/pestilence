@@ -1,21 +1,23 @@
 <template>
   <v-container>
     <v-row align="start">
-      <v-col cols="12" 
-        ><span  class="headline font-weight-bold white--text green" style="padding:15px;padding-right:100px">Records</span><v-btn
-        class="float-right"
-        outlined
-          color="white"
-          style="height:48px"
-          @click="$router.push('/create')"
-          >
-          <v-icon left>note_add</v-icon>Add new record</v-btn
+      <v-col cols="12"
+        ><div
+          class="headline font-weight-bold white--text green"
+          style="padding:15px;"
         >
+          Records
+        </div>
       </v-col>
+
       <v-col cols="12">
         <v-expansion-panels>
           <v-expansion-panel>
-            <v-expansion-panel-header><div><v-icon left >filter_list</v-icon>Filters</div></v-expansion-panel-header>
+            <v-expansion-panel-header
+              ><div>
+                <v-icon left>filter_list</v-icon>Filter
+              </div></v-expansion-panel-header
+            >
             <v-expansion-panel-content>
               <v-divider class="green"></v-divider>
               <v-container fluid>
@@ -52,41 +54,69 @@
           </v-expansion-panel>
         </v-expansion-panels>
       </v-col>
+      <v-col cols="12"
+        ><v-btn
+          class="float-right"
+          :block="$vuetify.breakpoint.xsOnly"
+          outlined
+          color="white"
+          style="height:48px"
+          @click="$router.push('/create')"
+        >
+          <v-icon left>note_add</v-icon>Add new record</v-btn
+        >
+      </v-col>
 
       <v-col cols="12" md="4" v-for="item in paginated" :key="item.id">
-        <v-card >
+        <v-card style="max-width:300px;margin:0 auto">
           <v-img :src="item.image" height="250">
-           <template v-slot:placeholder>
-                    <v-row
-                      class="fill-height ma-0"
-                      align="center"
-                      justify="center"
-                    >
-                      <v-progress-circular indeterminate color="green lighten-4"></v-progress-circular>
-                    </v-row>
-                  </template>
-                  </v-img>
-          <div class="text-right ma-2 subtitle-1S grey--text">
+            <div style="text-align:right;margin-right:8px;margin-top:8px">
+              <v-chip
+                label
+                :class="item.category"
+                style="min-width:120px;opacity:0.85"
+              >
+                <v-icon left color="white">mdi-label</v-icon
+                >{{ item.category }}</v-chip
+              >
+            </div>
+            <template v-slot:placeholder>
+              <v-row class="fill-height ma-0" align="center" justify="center">
+                <v-progress-circular
+                  indeterminate
+                  color="green lighten-4"
+                ></v-progress-circular>
+              </v-row>
+            </template>
+          </v-img>
+
+          <div class="text-right ma-2 caption grey--text">
             {{ new Date(item.timestamp).toDateString() }}
           </div>
           <v-card-text class="subtitle-1" style="margin-top:-15px">
-            <div class="upper title indigo--text">Category</div>
-            <v-chip
-              label
-              :class="item.category + ' mt-3'"
-              style="width:100%;text-align:center"
-              >{{ item.category }}</v-chip
-            >
-            <div class="upper title mt-5 indigo--text">Location</div>
-            <v-text-field disabled :value="item.location"></v-text-field>
-            <div class="upper title mt-5 indigo--text">Notes</div>
-            <v-textarea disabled :value="item.notes"></v-textarea>
+            <div class="upper subtitle-2  indigo--text">Location</div>
+            <v-text-field
+              disabled
+              :value="item.location"
+              style="margin-top:-10px"
+            ></v-text-field>
+            <div class="upper subtitle-2 indigo--text">Notes</div>
+            <v-textarea
+              disabled
+              :value="item.notes"
+              style="margin-top:-10px"
+              rows="3"
+            ></v-textarea>
             <v-chip label v-if="item.group">{{ item.group }}</v-chip>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
-    <v-pagination v-model="page" :length="pages" color="green" ></v-pagination>
+    <v-pagination
+      v-model="page"
+      :length="pages"
+      color="green lighten-2"
+    ></v-pagination>
   </v-container>
 </template>
 <script>
@@ -142,7 +172,6 @@ export default {
       });
   },
   methods: {
-    
     checkIfOnline() {
       return DB.collection("items").get({ source: "server" });
     },
@@ -151,7 +180,7 @@ export default {
         return { text: x.name, value: x.name };
       });
     },
-    clusterize(numClusters) {
+    clusterize(items, numClusters) {
       //test sort into 2 clusters
       clusterMaker.k(numClusters);
 
@@ -161,12 +190,12 @@ export default {
       //data from which to identify clusters, defaults to []
 
       clusterMaker.data(
-        this.observations.map(x => [
+        items.map(x => [
           parseFloat(x.location.split(",")[0]),
           parseFloat(x.location.split(",")[1])
         ])
       );
-
+      console.log("clyserte are", clusterMaker.clusters());
       return clusterMaker.clusters();
     },
     convertMonth(num) {
@@ -182,19 +211,33 @@ export default {
     },
 
     filterByLocation(items, numClusters) {
-      let clusters = this.clusterize(numClusters);
+      console.log("items are", items);
+      let clusters = this.clusterize(items, numClusters);
       let locationFiltered = [];
-      let SeenLocations = {};
 
       clusters.forEach((x, index) => {
+        let uniquePoints = [];
+
+        //remove duplicate points
+        let dict = {};
         x.points.forEach(point => {
+          if (!dict[point[0] + point[1]]) {
+            dict[point[0] + point[1]] = true;
+            uniquePoints.push(point);
+          }
+        });
+        console.log("uniquepoints are", uniquePoints);
+
+        uniquePoints.forEach(point => {
           let coords = point[0] + "," + point[1];
+          console.log("looking at", coords);
           let values = items.filter(z => {
-            if (!SeenLocations[coords]) {
-              if (z.location === coords) {
-                SeenLocations[coords] = true;
-                return true;
-              }
+            if (
+              z.location.split(",")[0] == point[0] &&
+              z.location.split(",")[1] == point[1]
+            ) {
+              console.log("passed at", coords);
+              return true;
             }
             return false;
           });
@@ -224,6 +267,10 @@ export default {
         );
       }
 
+      if (this.categorySelect != null) {
+        filtered = filtered.filter(x => x.category === this.categorySelect);
+      }
+
       if (this.gpsSelect != null) {
         filtered = this.filterByLocation(filtered, this.gpsSelect);
       } else {
@@ -234,21 +281,19 @@ export default {
         });
       }
 
-      if (this.categorySelect != null) {
-        filtered = filtered.filter(x => x.category === this.categorySelect);
-      }
-
       this.filtered = filtered;
+      // this.page=1;
       console.log("filtered is ", filtered);
 
-     
       return filtered;
     }
   },
   computed: {
-    pages: function(){
-let plength=this.filter().length / this.itemsPerPage   + 1;
-return parseInt(plength);
+    pages: function() {
+      //calculate whether to add 1 or not to items/pages
+      let b = this.filtered.length % this.itemsPerPage == 0 ? 0 : 1;
+      let plength = this.filtered.length / this.itemsPerPage + b;
+      return parseInt(plength);
     },
     paginated: function() {
       let startIndex = (this.page - 1) * this.itemsPerPage;

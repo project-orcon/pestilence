@@ -43,7 +43,7 @@ export default {
 
 <style>
 #app{
-  background-image: linear-gradient(to bottom right, green, yellow);
+  background-image: linear-gradient(to bottom right, #008000, #66BB6A);
 }
 
 .heading-font {

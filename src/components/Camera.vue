@@ -19,12 +19,7 @@
             >
           </video>
           <div style="text-align:center;height:0" v-show="showVideo">
-            <v-btn
-              fab
-              color="red"
-              id="capture"
-              class="camera_button_overlay"
-            >
+            <v-btn fab color="red" id="capture" class="camera_button_overlay">
               <v-icon color="white">camera</v-icon>
             </v-btn>
           </div>
@@ -39,10 +34,14 @@
               <v-icon color="white">sync</v-icon>
             </v-btn>
           </div>
-         
         </v-col>
         <v-col cols="12">
-    <v-input :rules="rules" v-model="value" class="ma-2" v-show="!showFilePicker"></v-input>
+          <v-input
+            :rules="rules"
+            v-model="value"
+            class="ma-2"
+            v-show="!showFilePicker"
+          ></v-input>
         </v-col>
         <v-col cols="12" v-show="showFilePicker" no_gutters="false">
           <v-file-input
@@ -64,7 +63,6 @@
 export default {
   mounted() {
     //check if can access media devices, if not display file picker.
-    this.setUpCanvas();
 
     const supported = "mediaDevices" in navigator;
     if (!supported) {
@@ -72,11 +70,8 @@ export default {
       return;
     }
 
-    const constraints = {
-      video: true
-    };
     navigator.mediaDevices
-      .getUserMedia(constraints)
+      .getUserMedia(this.constraints)
       .then(stream => {
         navigator.permissions.query({ name: "camera" }).then(permissionObj => {
           if (permissionObj.state === "granted") {
@@ -109,14 +104,14 @@ export default {
       this.showCanvas = false;
       this.showVideo = true;
     },
-    setUpCanvas() {
+    setUpCanvas(width, height) {
       //sets canvas height and width (responsively)
+      console.log("hfjwfkh", width, height);
       let canvas = document.getElementById("canvas");
-      canvas.width = document.documentElement.clientWidth;
-      canvas.height = canvas.width * 0.75;
+      canvas.width = width;
+      canvas.height = height;
     },
     updateValue: function(value) {
-   
       this.$emit("input", value);
     },
     setUpCamera() {
@@ -125,27 +120,27 @@ export default {
       const context = canvas.getContext("2d");
       const captureButton = document.getElementById("capture");
 
-      const constraints = {
-        video: true
-      };
+      player.addEventListener("loadeddata", x => {
+        this.setUpCanvas(player.videoWidth, player.videoHeight);
 
-      captureButton.addEventListener("click", () => {
-        // Draw the video frame to the canvas.
-        this.showCanvas = true;
-        this.showVideo = false;
+        captureButton.addEventListener("click", () => {
+          // Draw the video frame to the canvas.
+          this.showCanvas = true;
+          this.showVideo = false;
 
-        context.drawImage(player, 0, 0, canvas.width, canvas.height);
+          context.drawImage(player, 0, 0, canvas.width, canvas.height);
 
-        canvas.toBlob(blob => {
-          //convert blob into file.
-          let fileName = Date.now() + ".png";
-          let file = new File([blob], fileName);
-          this.updateValue(file);
+          canvas.toBlob(blob => {
+            //convert blob into file.
+            let fileName = Date.now() + ".png";
+            let file = new File([blob], fileName);
+            this.updateValue(file);
+          });
         });
       });
 
       // Attach the video stream to the video element and autoplay.
-      navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+      navigator.mediaDevices.getUserMedia(this.constraints).then(stream => {
         player.srcObject = stream;
       });
 
@@ -162,22 +157,22 @@ export default {
     }
   },
   data: () => ({
-    error:false,
+    error: false,
     showFilePicker: false,
     showCamera: true,
     showVideo: true,
-    showCanvas: false
+    showCanvas: false,
+    constraints: {
+      video: {
+        facingMode: {
+          exact: "environment"
+        }
+      }
+    }
   })
 };
 </script>
 <style scoped>
-
-
-
-.camera_on {
-//margin: 0 -24px !important;
-}
-
 video {
   display: block;
   padding: 0 !important;
