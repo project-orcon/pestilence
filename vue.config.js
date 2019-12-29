@@ -1,19 +1,19 @@
 module.exports = {
-  "transpileDependencies": [
-    "vuetify"
-  ]
-,
- 
+  transpileDependencies: ["vuetify"],
   pwa: {
-    name: 'Scout XYZ',
-    themeColor: '#4CAF50',
-    msTileColor: '#4CAF50',
-    appleMobileWebAppCapable: 'yes',
-    appleMobileWebAppStatusBarStyle: 'black',
+    name: "Scout XYZ",
+    start_url: ".",
+    display: "standalone",
+
+    themeColor: "#4CAF50",
+    msTileColor: "#4CAF50",
+    appleMobileWebAppCapable: "yes",
+    appleMobileWebAppStatusBarStyle: "black",
+    backgroundColor: "#FFFFFF",
 
     workboxPluginMode: "InjectManifest",
-    workboxOptions:{
+    workboxOptions: {
       swSrc: "src/service-worker.js"
     }
   }
-}
+};

@@ -5,7 +5,7 @@
       <v-icon large color="green" v-show="$route.path!= '/'" @click="$router.go(-1)">keyboard_backspace</v-icon>
         <v-spacer></v-spacer>
      
-<v-toolbar-title class="heading-font green--text font-weight-bold">
+<v-toolbar-title class="heading-font green--text  font-weight-bold">
 scout xyz
 
       </v-toolbar-title>
@@ -22,7 +22,7 @@ scout xyz
         </v-fade-transition>
       </v-container>
     </v-content>  
-    <v-footer color="green" class="mt-5"><a href="https://www.bedson.xyz" style="color:white;font-size:12px;text-decoration:none">A bedson xyz sample app</a></v-footer>
+    <v-footer dark class="mt-5 text-center"><a href="https://www.bedson.xyz" style="color:white;font-size:12px;text-decoration:none">A bedson xyz sample app</a></v-footer>
   </v-app>
   </div>
 </template>
@@ -43,7 +43,8 @@ export default {
 
 <style>
 #app{
-  background-image: linear-gradient(to bottom right, #008000, #66BB6A);
+  background-image: linear-gradient(to bottom right, #81C784, 
+#26A69A);
 }
 
 .heading-font {

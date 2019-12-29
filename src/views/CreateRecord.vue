@@ -1,48 +1,52 @@
 <template>
-  <div class="createRecord white">
-    <v-container fluid style="margin-top:10px;padding: 0 0" >
-    
-      <v-row >
+  <div class="createRecord">
+    <v-container fluid style="margin-top:10px;padding: 0 0">
+      <v-row>
         <v-col>
-            <div  class="headline font-weight-bold white--text green" style="margin-top:-12px;;padding:15px;width:100%;">Add new record</div>
-          <v-form ref="form">
+          <div
+            class="headline font-weight-bold white--text"
+            style="margin-top:-12px;;padding:15px;width:100%;background-color:rgba(0,0,0,0.14)"
+          >
+            Add new record
+          </div>
+          <v-form ref="form" class="white">
             <v-container>
-            <Camera v-model="file" :rules="imageRules"></Camera>
-            <v-select
-              v-model="category"
-              :items="categories"
-              label="Category"
-              :rules="categoryRules"
-              required
-            ></v-select>
-           <GPS v-model="location" :rules="locationRules"></GPS>
-            <v-textarea
-              v-model="notes"
-              label="Notes"
-              :rules="notesRules"
-              required
-            ></v-textarea>
-            <div style="text-align:right;margin-bottom:100px">
-              <v-btn outlined @click="save()">
-                Save New Record
-                <v-progress-circular
-                  style="margin-left:10px"
-                  v-show="currentlySaving"
-                  size="16"
-                  width="2"
-                  indeterminate
-                  color="black"
-                ></v-progress-circular
-              ></v-btn>
-            </div>
+              <Camera v-model="file" :rules="imageRules"></Camera>
+              <v-select
+                v-model="category"
+                :items="categories"
+                label="Category"
+                :rules="categoryRules"
+                required
+              ></v-select>
+              <GPS v-model="location" :rules="locationRules"></GPS>
+              <v-textarea
+                v-model="notes"
+                label="Notes"
+                :rules="notesRules"
+                required
+              ></v-textarea>
+              <div style="text-align:right;margin-bottom:100px">
+                <v-btn outlined @click="saveOffline()">
+                  Save New Record
+                  <v-progress-circular
+                    style="margin-left:10px"
+                    v-show="currentlySaving"
+                    size="16"
+                    width="2"
+                    indeterminate
+                    color="black"
+                  ></v-progress-circular
+                ></v-btn>
+              </div>
             </v-container>
           </v-form>
         </v-col>
       </v-row>
       <div class="text-center ma-2">
-        <v-snackbar v-model="uploadError">
-          An error occured and your image could not be uploaded.
-          <v-btn color="pink" text @click="uploadError = false">
+        <v-snackbar v-model="error">
+          {{errrorMessage}}
+          <v-btn color="pink" text @click="error = false">
             Close
           </v-btn>
         </v-snackbar>
@@ -59,7 +63,7 @@ import "firebase/firestore";
 
 import Camera from "@/components/Camera.vue";
 import GPS from "@/components/GPS.vue";
-
+import IDB from "@/indexDbService.js";
 export const DB = App.firestore();
 
 export const Storage = App.storage();
@@ -77,7 +81,38 @@ export default {
     turnCameraOn() {
       this.setUpCamera();
     },
-   
+    saveOffline(){
+
+      //save file and images to indexdb
+       if (this.validateField()) {
+          this.currentlySaving = true;
+
+         //convert image file to blob.
+        let dateNow = Date.now();
+         let observation = {
+                id: dateNow,
+                timestamp: dateNow,
+                category: this.category,
+                image: this.file.name,
+                url: null,
+                location: this.location,
+                notes: this.notes,
+                file:this.file
+              };
+        IDB.saveIndexedDB([observation]).then( x=>{
+           this.currentlySaving = false;
+            this.$router.push("/");
+          }).catch(e => {
+             this.currentlySaving = false;
+            this.errorMessage="Unable to save new record";
+            this.error=true;
+        });
+
+       }
+
+
+    },
+
     save() {
       if (this.validateField()) {
         this.currentlySaving = true;
@@ -85,19 +120,22 @@ export default {
         this.onUpload(this.file)
           .then(imageUrl => {
             var dateNow = Date.now();
-             var generatedId = DB.collection("items").doc().id;
+            var generatedId = DB.collection("items").doc().id;
 
-            DB.collection("items").doc(generatedId).set({
-              id:generatedId,
-              timestamp: dateNow,
-              category: this.category,
-              image: this.file.name,
-              location: this.location,
-              notes: this.notes
-            });
-            //successfully saved -> 
+            DB.collection("items")
+              .doc(generatedId)
+              .set({
+                id: generatedId,
+                timestamp: dateNow,
+                category: this.category,
+                image: this.file.name,
+                url: imageUrl,
+                location: this.location,
+                notes: this.notes
+              });
+            //successfully saved ->
             this.currentlySaving = false;
-            this.$router.push('/')
+            this.$router.push("/");
           })
           .catch(e => {
             this.currentlySaving = false;
@@ -148,13 +186,11 @@ export default {
     categories: ["Weed", "Pest", "Disease"],
     location: "",
     notes: "",
-    uploadError: false,
     currentlySaving: false
   })
 };
 </script>
 <style scoped>
-
 canvas {
   width: 100%;
 }

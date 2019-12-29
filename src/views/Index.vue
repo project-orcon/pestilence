@@ -3,13 +3,12 @@
     <v-row align="start">
       <v-col cols="12"
         ><div
-          class="headline font-weight-bold white--text green"
-          style="padding:15px;"
+          class="headline font-weight-bold white--text"
+          style="padding:15px;background-color:rgba(0,0,0,0.14)"
         >
           Records
         </div>
       </v-col>
-
       <v-col cols="12">
         <v-expansion-panels>
           <v-expansion-panel>
@@ -60,7 +59,7 @@
           :block="$vuetify.breakpoint.xsOnly"
           outlined
           color="white"
-          style="height:48px"
+          style="height:48px;background-color:rgba(0,0,0,0.14)"
           @click="$router.push('/create')"
         >
           <v-icon left>note_add</v-icon>Add new record</v-btn
@@ -69,7 +68,7 @@
 
       <v-col cols="12" md="4" v-for="item in paginated" :key="item.id">
         <v-card style="max-width:300px;margin:0 auto">
-          <v-img :src="item.image" height="250">
+          <v-img :src="item.url" height="250" eager>
             <div style="text-align:right;margin-right:8px;margin-top:8px">
               <v-chip
                 label
@@ -96,13 +95,13 @@
           <v-card-text class="subtitle-1" style="margin-top:-15px">
             <div class="upper subtitle-2  indigo--text">Location</div>
             <v-text-field
-              disabled
+              readonly
               :value="item.location"
               style="margin-top:-10px"
             ></v-text-field>
             <div class="upper subtitle-2 indigo--text">Notes</div>
             <v-textarea
-              disabled
+              readonly
               :value="item.notes"
               style="margin-top:-10px"
               rows="3"
@@ -115,7 +114,8 @@
     <v-pagination
       v-model="page"
       :length="pages"
-      color="green lighten-2"
+      color="rgba(0,0,0,0.14)"
+      style="margin-top:50px;"
     ></v-pagination>
   </v-container>
 </template>
@@ -146,32 +146,46 @@ export default {
       )
       .then(querySnapshot => {
         this.observations = querySnapshot.docs.map(doc => doc.data());
-        // do something with documents
-
-        Promise.all(
-          this.observations.map(x => Storage.ref(x.image).getDownloadURL())
-        ).then(result => {
-          result.forEach((y, index) => (this.observations[index].image = y));
-        });
-
-        //save data to indexedDB
-
+        //set filtered as pagination is based on filtered items
         return this.observations;
       })
       .then(obs => IDB.saveIndexedDB(obs))
+      .then(
+        //load all the data that has been stored locally in indexeddb
+      ()=> { return IDB.getAllRecords();}
+      )
+      .then(x => {
+        this.observations = x.map(y => this.addLocalImageURL(y));
+        this.filtered = this.observations;
+      })
       .catch(e => {
+        console.log("error",e)
         console.log("Not ONLINE");
-        IDB.indexDBPromise().then(response => {
-          let indexdb = response;
-          let transaction = indexdb.transaction("observations", "readwrite");
-          let estimateStore = transaction.objectStore("observations");
-          indexdb.getAll("observations").then(x => {
-            this.observations = x;
-          });
+        IDB.getAllRecords().then(x => {
+            this.observations = x.map(y => this.addLocalImageURL(y)
+            );
+            this.filtered = this.observations;
         });
       });
   },
   methods: {
+    addLocalImageURL(y) {
+      if (y.url == null) {
+        if (y.file instanceof Blob) {
+          let reader = new FileReader();
+          reader.addEventListener(
+            "load",
+            function() {
+              y.url = reader.result;
+            },
+            false
+          );
+
+          let imgURL = reader.readAsDataURL(y.file);
+        }
+      }
+      return y;
+    },
     checkIfOnline() {
       return DB.collection("items").get({ source: "server" });
     },
@@ -282,7 +296,7 @@ export default {
       }
 
       this.filtered = filtered;
-      // this.page=1;
+      this.page = 1;
       console.log("filtered is ", filtered);
 
       return filtered;
@@ -300,7 +314,7 @@ export default {
       console.log(startIndex);
       let endIndex = startIndex + this.itemsPerPage;
       console.log(endIndex);
-      return this.filter().slice(startIndex, endIndex);
+      return this.filtered.slice(startIndex, endIndex);
     }
   },
   data: () => ({
