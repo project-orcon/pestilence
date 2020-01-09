@@ -132,7 +132,7 @@ export default {
         this.setUpCanvas(player.videoWidth, player.videoHeight);
 
         captureButton.addEventListener("click", () => {
-          // Draw the video frame to the canvas.
+          // Draw the video frame to the canvass
           this.showCanvas = true;
           this.showVideo = false;
 
@@ -148,6 +148,12 @@ export default {
       });
 
       // Attach the video stream to the video element and autoplay.
+
+      //need to set these for camera to work with iOS
+    player.setAttribute('autoplay', '');
+    player.setAttribute('muted', '');
+    player.setAttribute('playsinline', '');
+
       navigator.mediaDevices.getUserMedia(this.constraints).then(stream => {
         player.srcObject = stream;
       });
@@ -173,8 +179,9 @@ export default {
     constraints: {
       video: {
         facingMode: {
-          exact: "environment"
-        }
+          ideal: "environment"
+        },
+        frameRate: { ideal: 10, max: 15 }
       }
     }
   })

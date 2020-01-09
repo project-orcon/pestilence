@@ -26,7 +26,7 @@ const saveIndexedDB=function(objects) {
 })
 }
 
-const getAllRecords= function(objects){
+const getAllRecords= function(){
   return indexDBPromise().then(response =>{
     console.log('response is',response);
   return response.getAll(name)
