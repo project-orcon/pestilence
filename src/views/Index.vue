@@ -156,7 +156,8 @@ export default {
       )
       .then(x => {
         this.observations = x.map(y => this.addLocalImageURL(y));
-        this.filtered = this.observations;
+        //want newest entries first so reverse.
+        this.filtered = this.sortByTimestamp(this.observations);
       })
       .catch(e => {
         console.log("error",e)
@@ -164,11 +165,14 @@ export default {
         IDB.getAllRecords().then(x => {
             this.observations = x.map(y => this.addLocalImageURL(y)
             );
-            this.filtered = this.observations;
+            this.filtered = this.sortByTimestamp(this.observations);
         });
       });
   },
   methods: {
+    sortByTimestamp(arrayx){
+      return arrayx.sort((a,b)=>{return (a.timestamp < b.timestamp) ? 1: ((b.timestamp < a.timestamp) ? -1: 0)});
+    },
     addLocalImageURL(y) {
       if (y.url == null) {
         if (y.file instanceof Blob) {

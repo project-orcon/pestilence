@@ -45,7 +45,7 @@
       </v-row>
       <div class="text-center ma-2">
         <v-snackbar v-model="error">
-          {{errrorMessage}}
+          {{errorMessage}}
           <v-btn color="pink" text @click="error = false">
             Close
           </v-btn>
@@ -103,6 +103,7 @@ export default {
            this.currentlySaving = false;
             this.$router.push("/");
           }).catch(e => {
+            console.log("error",e);
              this.currentlySaving = false;
             this.errorMessage="Unable to save new record";
             this.error=true;

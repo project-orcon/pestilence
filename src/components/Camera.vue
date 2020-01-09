@@ -67,12 +67,17 @@ export default {
     const supported = "mediaDevices" in navigator;
     if (!supported) {
       this.showFilePicker = true;
+      console.log("media devices are not supported")
       return;
     }
 
     navigator.mediaDevices
       .getUserMedia(this.constraints)
       .then(stream => {
+
+        /*
+        //navigator.permissions.query currently doesn't work with safari so currently can't use it. 
+
         navigator.permissions.query({ name: "camera" }).then(permissionObj => {
           if (permissionObj.state === "granted") {
             //if camera permission has previously been granted then display video,
@@ -82,10 +87,13 @@ export default {
           } else {
             this.showFilePicker = true;
           }
-        });
+        });*/
+
+        this.setUpCamera();
       })
       .catch(error => {
         //error thrown if can't access camera, despite mediaServices being supported
+        console.log("there was an error with the camera",error);
         this.showFilePicker = true;
       });
   },

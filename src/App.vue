@@ -5,7 +5,7 @@
       <v-icon large color="green" v-show="$route.path!= '/'" @click="$router.go(-1)">keyboard_backspace</v-icon>
         <v-spacer></v-spacer>
      
-<v-toolbar-title class="heading-font green--text  font-weight-bold">
+<v-toolbar-title class="heading-font green--text font-weight-bold">
 scout xyz
 
       </v-toolbar-title>
@@ -48,7 +48,9 @@ export default {
 }
 
 .heading-font {
-font-family: 'Didact Gothic', sans-serif !important;
+font-family: sans-serif;font-weight:400; font-style:normal;
+
+
 font-size:30px !important;
 }
 
