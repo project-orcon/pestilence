@@ -129,52 +129,130 @@ const clusterMaker = require("clusters");
 
 import SwitchFilter from "@/components/Filter.vue";
 import IDB from "@/indexDbService.js";
+import sharedMethodsMixin from "@/sharedMethods.js";
 
 export default {
   components: {
     SwitchFilter
   },
+  mixins: [sharedMethodsMixin],
   mounted() {
     this.defaultMonth = this.currentMonth();
     let vueInstance = this;
 
+
     this.checkIfOnline()
-      .then(
-        DB.collection("items")
+      .catch(e => {
+        console.log("error", e);
+        console.log("Not ONLINE");
+        IDB.getAllRecords().then(x => {
+          this.observations = x.map((y) => this.addLocalImageURL(y));
+          this.filtered = this.sortByTimestamp(this.observations);
+        });
+
+        //break promise chain
+        return Promise.reject(e);
+      })
+      //load the new entries that may have been uploaded offline.
+      .then(() => {
+        if (localStorage.getItem("addedOffline")) {
+
+            let offlineArray=JSON.parse(localStorage.getItem("addedOffline"));
+
+          if (offlineArray > 0) {
+            let promiseArray = [];
+            offlineArray.forEach(x => {
+              promiseArray.push(IDB.getRecord(x));
+            });
+            return promiseArray;
+          }
+        }
+        return [];
+      })
+      .then((promiseArray) => {return Promise.all(promiseArray)})
+      .then((obsArray) => {
+        let firebaseRecords = [];
+        obsArray.forEach((obs) => {
+          if (obs == undefined) {
+            return;}
+          let file = obs.file;
+          delete obs.file;
+          let observation = obs;
+          firebaseRecords.push(this.saveFirebase(observation, file));
+        });
+        return firebaseRecords;
+      })
+      .then((firebaseRecords) => Promise.all(firebaseRecords)) 
+      .then(() => {
+        //clear local storage
+        localStorage.removeItem("addedOffline");
+      })
+      .then(()=> {IDB.clearAllData()})
+      
+      .then(() => {
+        return DB.collection("items")
           .orderBy("timestamp", "desc")
           .get()
+      }
       )
-      .then(querySnapshot => {
+      .then((querySnapshot) => {
         this.observations = querySnapshot.docs.map(doc => doc.data());
         //set filtered as pagination is based on filtered items
         return this.observations;
       })
+      .then(obs => {let res=[];
+       obs.forEach( x=>  {res.push(this.convertImageUrlToFileForObject(x))});
+       return Promise.all(res);})
+      .then(obs => {IDB.saveIndexedDB(obs)})
+      .then(() => {
+        console.log("fingerprint in function is",this.$store.getters.fingerprint)
+        return DB.collection("userObservations")
+          .orderBy("timestamp", "desc")
+          .where("user", "==", this.$store.getters.fingerprint).get()
+      }
+      )
+      .then((querySnapshot) => {
+        if (querySnapshot.docs){
+        this.observations = this.observations.concat(querySnapshot.docs.map(doc => doc.data()));
+        }
+        //set filtered as pagination is based on filtered items
+        return this.observations;
+      })
+      .then(obs => {let res=[];
+       obs.forEach( x=>  {res.push(this.convertImageUrlToFileForObject(x))});
+       return Promise.all(res);})
       .then(obs => IDB.saveIndexedDB(obs))
       .then(
         //load all the data that has been stored locally in indexeddb
-      ()=> { return IDB.getAllRecords();}
+        () => {
+          return IDB.getAllRecords();
+        }
       )
       .then(x => {
-        this.observations = x.map(y => this.addLocalImageURL(y));
-        //want newest entries first so reverse.
+        this.observations = x;
+        //want newest entries first so sort by timestamp descending
         this.filtered = this.sortByTimestamp(this.observations);
       })
       .catch(e => {
-        console.log("error",e)
-        console.log("Not ONLINE");
-        IDB.getAllRecords().then(x => {
-            this.observations = x.map(y => this.addLocalImageURL(y)
-            );
-            this.filtered = this.sortByTimestamp(this.observations);
-        });
+        console.log(e);
       });
   },
   methods: {
-    sortByTimestamp(arrayx){
-      return arrayx.sort((a,b)=>{return (a.timestamp < b.timestamp) ? 1: ((b.timestamp < a.timestamp) ? -1: 0)});
+    convertImageUrlToFileForObject(object){
+    return fetch(object.url)
+  .then(res => res.blob())
+  .then((blob) => {object.file=blob; return object;})
+  },
+    sortByTimestamp(arrayx) {
+      return arrayx.sort((a, b) => {
+        return a.timestamp < b.timestamp
+          ? 1
+          : b.timestamp < a.timestamp
+          ? -1
+          : 0;
+      });
     },
     addLocalImageURL(y) {
-      if (y.url == null) {
         if (y.file instanceof Blob) {
           let reader = new FileReader();
           reader.addEventListener(
@@ -187,11 +265,8 @@ export default {
 
           let imgURL = reader.readAsDataURL(y.file);
         }
-      }
+    
       return y;
-    },
-    checkIfOnline() {
-      return DB.collection("items").get({ source: "server" });
     },
     monthsGroup: function() {
       return this.months.map(x => {

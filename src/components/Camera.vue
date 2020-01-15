@@ -237,8 +237,7 @@ export default {
 
             //convert canvas to file
             canvas.toBlob(blob => {
-              let fileName = fr.fileName;
-              let file = new File([blob], fileName);
+              let file = new File([blob], value.name);
               this.updateValue(file);
             });
           };

@@ -35,6 +35,42 @@ export default {
   components: {
   
   },
+  mounted(){
+return this.fingerprinting().then(()=> {console.log("APP VUEfingerprint is",this.$store.getters.fingerprint)});
+  },
+  methods: {
+setFingerprint(components) {
+      console.log("hash is", components); // an array of components: {key: ..., value: ...}
+      let values = components.map(function(component) {
+        return component.value;
+      });
+      this.$store.commit("setFingerprint",Fingerprint2.x64hash128(values.join(""), 31));
+      //this.estimates = this.estimates.where("user", "==", this.fingerprint);
+    },
+    fingerprinting() {
+      const returnPromise = new Promise((resolve, reject) => {
+        const Fingerprint2 = window.Fingerprint2;
+        let vueInstance = this;
+        if (window.requestIdleCallback) {
+          requestIdleCallback(() => {
+            Fingerprint2.get(function(components) {
+              vueInstance.setFingerprint(components);
+              resolve();
+            });
+          });
+        } else {
+          setTimeout(function() {
+            Fingerprint2.get(function(components) {
+              vueInstance.setFingerprint(components);
+              resolve();
+            });
+          }, 500);
+        }
+      });
+
+      return returnPromise;
+    },
+  },
   data: () => ({
     //
   }),

@@ -14,7 +14,7 @@ const saveIndexedDB=function(objects) {
   console.log("saving objects",objects)
   let indexDbPromise = indexDBPromise();
 
-  return indexDbPromise.then(response => {
+  return indexDbPromise.then((response) => {
 
     let indexdb = response;
     let transaction = indexdb.transaction(name, "readwrite");
@@ -34,6 +34,21 @@ const getAllRecords= function(){
 )
 }
 
+const getRecord= function(key){
+  return indexDBPromise().then((response) =>{
+    console.log('response is',response);
+    let indexdb = response;
+    let transaction = indexdb.transaction(name, "readonly");
+    let objectStore = transaction.objectStore(name);
+    let request=objectStore.get(key);
+    return request;
+  }
+).then((val)=> {
+  console.log("NEED TO SEE WHAT THIS FUNCTION IS RETURNING"+val);
+  return val;
+});
+}
+
 const deleteIndexedDB=function(id) {
   let indexDbPromise = indexDBPromise();
 
@@ -48,15 +63,17 @@ const deleteIndexedDB=function(id) {
 const clearAllData= function(){
   let indexDbPromise = indexDBPromise();
 
-  indexDbPromise.then(function(response) {
+  return indexDbPromise.then(function(response) {
     let indexdb = response;
     let transaction = indexdb.transaction(name, "readwrite");
-    let objectStore = transaction.deleteObjectStore(name);
+    let objectStore = transaction.objectStore(name);
+    objectStore.clear();
 
   });
 }
 export default {
     indexDBPromise,
+    getRecord,
     saveIndexedDB,
     deleteIndexedDB,
     clearAllData,
